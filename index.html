@@ -106,51 +106,54 @@
     }
     .dn { flex: 1; text-align: center; font-weight: bold; font-size: 0.9em; padding: 3px; }
 
-    /* ===== IMAGES MK — 2 zones div superposées ===== */
-    #tmk { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-    #tmk td { width: 33.33%; padding: 2px; }
+    /* ===== ZONE SAISIE DONNE — colonnes avec cadre ===== */
+    #zone-donne {
+      display: flex; width: 100%; gap: 4px;
+      padding: 4px; margin-bottom: 4px;
+    }
+    .col-donne {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; gap: 4px;
+      border: 2px solid #666; border-radius: 8px;
+      padding: 6px 4px; background: #111;
+    }
+    .col-donne.sel-g { border-color: #4caf50; background: #0a1f0a; }
+    .col-donne.sel-p { border-color: #f44336; background: #1f0a0a; }
 
+    /* Images mk */
     .mk-wrap {
-      position: relative;
-      width: 100%;
-      cursor: pointer;
+      position: relative; width: 100%; cursor: pointer;
     }
     .mk-wrap img {
       width: 100%; height: auto; display: block;
-      pointer-events: none; /* l'image ne capte pas les events */
+      pointer-events: none;
     }
-    /* Les deux zones cliquables superposées à l'image */
     .mk-zone {
       position: absolute; top: 0; height: 100%; width: 50%;
       touch-action: manipulation;
     }
-    .mk-zone-g { left: 0; }   /* +½ */
-    .mk-zone-d { right: 0; }  /* -1 */
+    .mk-zone-g { left: 0; }
+    .mk-zone-d { right: 0; }
 
-    /* ===== SAISIE PLIS ===== */
-    #splis {
-      display: flex; width: 100%;
-      gap: 4px; padding: 0 2px 4px;
-    }
-    .col-plis { flex: 1; }
+    /* Boutons +/- plis */
     .plis-ctrl {
       display: flex; align-items: center;
-      justify-content: center; gap: 4px;
+      justify-content: center; gap: 4px; width: 100%;
     }
     .btn-pm {
       background: #444; color: white;
       border: 2px solid #888; border-radius: 50%;
-      width: 34px; height: 34px;
-      font-size: 1.3em; line-height: 1;
+      width: 30px; height: 30px;
+      font-size: 1.2em; line-height: 1;
       cursor: pointer; flex-shrink: 0;
       touch-action: manipulation;
     }
     .btn-pm:active { background: #888; }
     .inp-plis {
-      width: 38px; text-align: center;
-      font-size: 1.1em; font-weight: bold;
+      width: 34px; text-align: center;
+      font-size: 1em; font-weight: bold;
       border: 2px solid #aaa; border-radius: 4px;
-      background: #111; color: white; padding: 4px 0;
+      background: #222; color: white; padding: 3px 0;
       touch-action: manipulation;
     }
     .inp-plis::-webkit-inner-spin-button,
@@ -163,7 +166,7 @@
       padding: 8px 10px; background: #222; gap: 10px;
     }
     #msg { flex: 1; color: white; font-size: 0.9em; min-height: 1.5em; }
-    #imval { width: 72px; cursor: pointer; flex-shrink: 0; touch-action: manipulation; }
+    #imval { width: 100px; cursor: pointer; flex-shrink: 0; touch-action: manipulation; }
 
     /* ===== NOMS ===== */
 
@@ -263,50 +266,38 @@
     <div class="dn nom-o" id="dn-o">ORA</div>
   </div>
 
-  <!-- Images mk avec zones div (pas d'image-map) -->
-  <table id="tmk">
-    <tr>
-      <td>
-        <div class="mk-wrap" id="mkR">
-          <img id="img1" src="img1/mk00.png" alt="">
-          <div class="mk-zone mk-zone-g" ontouchend="touchMk('R',1,event)" onclick="clicMk('R',1)"></div>
-          <div class="mk-zone mk-zone-d" ontouchend="touchMk('R',2,event)" onclick="clicMk('R',2)"></div>
-        </div>
-      </td>
-      <td>
-        <div class="mk-wrap" id="mkB">
-          <img id="img2" src="img1/mk00.png" alt="">
-          <div class="mk-zone mk-zone-g" ontouchend="touchMk('B',1,event)" onclick="clicMk('B',1)"></div>
-          <div class="mk-zone mk-zone-d" ontouchend="touchMk('B',2,event)" onclick="clicMk('B',2)"></div>
-        </div>
-      </td>
-      <td>
-        <div class="mk-wrap" id="mkO">
-          <img id="img3" src="img1/mk00.png" alt="">
-          <div class="mk-zone mk-zone-g" ontouchend="touchMk('O',1,event)" onclick="clicMk('O',1)"></div>
-          <div class="mk-zone mk-zone-d" ontouchend="touchMk('O',2,event)" onclick="clicMk('O',2)"></div>
-        </div>
-      </td>
-    </tr>
-  </table>
-
-  <!-- Saisie plis -->
-  <div id="splis">
-    <div class="col-plis">
+  <!-- Zone saisie donne : mk + plis groupés par colonne avec cadre -->
+  <div id="zone-donne">
+    <div class="col-donne" id="col-R">
+      <div class="mk-wrap">
+        <img id="img1" src="img1/mk00.png" alt="">
+        <div class="mk-zone mk-zone-g" ontouchend="touchMk('R',1,event)" onclick="clicMk('R',1)"></div>
+        <div class="mk-zone mk-zone-d" ontouchend="touchMk('R',2,event)" onclick="clicMk('R',2)"></div>
+      </div>
       <div class="plis-ctrl">
         <button class="btn-pm" ontouchend="touchPm('R',-1,event)" onclick="changerPlis('R',-1)">−</button>
         <input class="inp-plis" id="ScoreR" type="number" min="0" max="10" placeholder="—" oninput="verifierPlis()">
         <button class="btn-pm" ontouchend="touchPm('R',+1,event)" onclick="changerPlis('R',+1)">+</button>
       </div>
     </div>
-    <div class="col-plis">
+    <div class="col-donne" id="col-B">
+      <div class="mk-wrap">
+        <img id="img2" src="img1/mk00.png" alt="">
+        <div class="mk-zone mk-zone-g" ontouchend="touchMk('B',1,event)" onclick="clicMk('B',1)"></div>
+        <div class="mk-zone mk-zone-d" ontouchend="touchMk('B',2,event)" onclick="clicMk('B',2)"></div>
+      </div>
       <div class="plis-ctrl">
         <button class="btn-pm" ontouchend="touchPm('B',-1,event)" onclick="changerPlis('B',-1)">−</button>
         <input class="inp-plis" id="ScoreB" type="number" min="0" max="10" placeholder="—" oninput="verifierPlis()">
         <button class="btn-pm" ontouchend="touchPm('B',+1,event)" onclick="changerPlis('B',+1)">+</button>
       </div>
     </div>
-    <div class="col-plis">
+    <div class="col-donne" id="col-O">
+      <div class="mk-wrap">
+        <img id="img3" src="img1/mk00.png" alt="">
+        <div class="mk-zone mk-zone-g" ontouchend="touchMk('O',1,event)" onclick="clicMk('O',1)"></div>
+        <div class="mk-zone mk-zone-d" ontouchend="touchMk('O',2,event)" onclick="clicMk('O',2)"></div>
+      </div>
       <div class="plis-ctrl">
         <button class="btn-pm" ontouchend="touchPm('O',-1,event)" onclick="changerPlis('O',-1)">−</button>
         <input class="inp-plis" id="ScoreO" type="number" min="0" max="10" placeholder="—" oninput="verifierPlis()">
@@ -670,6 +661,13 @@ function majMk(c, etat) {
   var fic = (etat===1) ? "mk10.png" : (etat===2) ? "mk01.png" : "mk00.png";
   var id  = (c==="R") ? "img1" : (c==="B") ? "img2" : "img3";
   setImg(id, sk + "/" + fic);
+  // Mettre à jour la couleur du cadre
+  var col = document.getElementById("col-"+c);
+  if (col) {
+    col.classList.remove("sel-g", "sel-p");
+    if (etat===1) col.classList.add("sel-g");
+    if (etat===2) col.classList.add("sel-p");
+  }
 }
 
 function clicMk(c, v) {
