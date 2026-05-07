@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>COM'ON !</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      background: #787878;
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ===== MENU ===== */
+    #menubar { background: #333; position: relative; z-index: 100; }
+
+    #menubtn {
+      background: none; border: none; color: white;
+      padding: 13px 18px; font-size: 1em; cursor: pointer;
+      display: block;
+      touch-action: manipulation;
+    }
+
+    #menudrop {
+      display: none; position: absolute; top: 100%; left: 0;
+      background: #f5f5f5; min-width: 240px;
+      box-shadow: 0 6px 20px rgba(0,0,0,.5); z-index: 200;
+    }
+    #menudrop.open { display: block; }
+    #menudrop a {
+      display: block; padding: 14px 18px; color: #222;
+      text-decoration: none; border-bottom: 1px solid #ddd;
+      touch-action: manipulation;
+    }
+    #menudrop a:active { background: #ddd; }
+    #menudrop hr { border: none; border-top: 2px solid #ccc; }
+
+    /* ===== DIALOGUE ===== */
+    #overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    #overlay.open { display: flex; }
+    #dialog {
+      background: white; border-radius: 12px;
+      padding: 26px 20px 18px; max-width: 290px;
+      width: 90%; text-align: center;
+    }
+    #dialog p { margin-bottom: 20px; font-size: 1.05em; line-height: 1.5; }
+    .dbtn {
+      display: inline-block; padding: 11px 26px;
+      border-radius: 7px; border: none; font-size: 1em;
+      cursor: pointer; margin: 4px;
+      touch-action: manipulation;
+    }
+    #dbtn-ok  { background: #c00; color: white; }
+    #dbtn-non { background: #888; color: white; }
+
+    /* ===== TABLEAU DE MARQUE ===== */
+    #tmarque {
+      width: 100%; border-collapse: separate;
+      border-spacing: 0; border: 2px solid yellow;
+      background: black;
+    }
+    #tmarque th, #tmarque td {
+      border: 1px solid yellow; text-align: center;
+      padding: 0; width: 33.33%;
+    }
+    #tmarque img { width: 100%; height: auto; display: block; }
+
+    .nom-r { background:#ffdddd; color:#900; font-size:1.2em; font-weight:bold; padding:5px 2px; }
+    .nom-b { background:#dfe2f4; color:#00c; font-size:1.2em; font-weight:bold; padding:5px 2px; }
+    .nom-o { background:#fdecc7; color:#a60; font-size:1.2em; font-weight:bold; padding:5px 2px; }
+
+    /* ===== AVERTISSEMENTS ===== */
+    #tavert { width: 100%; border-collapse: collapse; }
+    #tavert td { width: 33.33%; padding: 0; }
+    #tavert img { width: 100%; height: auto; display: block; }
+
+    /* ===== SECTION SAISIE DONNE ===== */
+    #sdonne {
+      background: #1a1a1a;
+      border-top: 2px solid yellow;
+      padding: 8px 4px;
+    }
+
+    /* Noms répétés au-dessus de la saisie */
+    #snoms-donne {
+      display: flex; width: 100%; margin-bottom: 4px;
+    }
+    .dn { flex: 1; text-align: center; font-weight: bold; font-size: 0.9em; padding: 3px; }
+
+    /* ===== IMAGES MK — 2 zones div superposées ===== */
+    #tmk { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
+    #tmk td { width: 33.33%; padding: 2px; }
+
+    .mk-wrap {
+      position: relative;
+      width: 100%;
+      cursor: pointer;
+    }
+    .mk-wrap img {
+      width: 100%; height: auto; display: block;
+      pointer-events: none; /* l'image ne capte pas les events */
+    }
+    /* Les deux zones cliquables superposées à l'image */
+    .mk-zone {
+      position: absolute; top: 0; height: 100%; width: 50%;
+      touch-action: manipulation;
+    }
+    .mk-zone-g { left: 0; }   /* +½ */
+    .mk-zone-d { right: 0; }  /* -1 */
+
+    /* ===== SAISIE PLIS ===== */
+    #splis {
+      display: flex; width: 100%;
+      gap: 4px; padding: 0 2px 4px;
+    }
+    .col-plis { flex: 1; }
+    .plis-ctrl {
+      display: flex; align-items: center;
+      justify-content: center; gap: 4px;
+    }
+    .btn-pm {
+      background: #444; color: white;
+      border: 2px solid #888; border-radius: 50%;
+      width: 34px; height: 34px;
+      font-size: 1.3em; line-height: 1;
+      cursor: pointer; flex-shrink: 0;
+      touch-action: manipulation;
+    }
+    .btn-pm:active { background: #888; }
+    .inp-plis {
+      width: 38px; text-align: center;
+      font-size: 1.1em; font-weight: bold;
+      border: 2px solid #aaa; border-radius: 4px;
+      background: #111; color: white; padding: 4px 0;
+      touch-action: manipulation;
+    }
+    .inp-plis::-webkit-inner-spin-button,
+    .inp-plis::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .inp-plis { -moz-appearance: textfield; }
+
+    /* ===== VALIDER ===== */
+    #valider-row {
+      display: flex; align-items: center;
+      padding: 8px 10px; background: #222; gap: 10px;
+    }
+    #msg { flex: 1; color: white; font-size: 0.9em; min-height: 1.5em; }
+    #imval { width: 72px; cursor: pointer; flex-shrink: 0; touch-action: manipulation; }
+
+    /* ===== NOMS ===== */
+
+    /* ===== CHOIX DU CHAPEAU ===== */
+    @keyframes pulse-chap {
+      0%   { box-shadow: 0 0 0px 0px rgba(255,220,0,0); }
+      50%  { box-shadow: 0 0 12px 8px rgba(255,220,0,0.9); }
+      100% { box-shadow: 0 0 0px 0px rgba(255,220,0,0); }
+    }
+    .chap-pulse {
+      animation: pulse-chap 1s infinite;
+      cursor: pointer;
+    }
+    #imval.disabled {
+      opacity: 0.3;
+      cursor: default;
+      pointer-events: none;
+    }
+
+  </style>
+</head>
+<body>
+
+<!-- ===== DIALOGUE ===== -->
+<div id="overlay">
+  <div id="dialog">
+    <p id="dialog-msg">Confirmer ?</p>
+    <button class="dbtn" id="dbtn-ok"  onclick="dialogOui()">Oui</button>
+    <button class="dbtn" id="dbtn-non" onclick="dialogNon()">Annuler</button>
+  </div>
+</div>
+
+<!-- ===== MENU ===== -->
+<div id="menubar">
+  <button id="menubtn" onclick="toggleMenu()">☰ Menu</button>
+  <div id="menudrop">
+    <a href="javascript:void(0)" onclick="menuJoueurs()">👥 Joueurs & Stats</a>
+    <a href="javascript:void(0)" onclick="menuAnnuler()">↩ Annuler dernière marque</a>
+    <a href="javascript:void(0)" onclick="menuNouvelle()">🆕 Nouvelle partie</a>
+    <hr>
+    <a href="javascript:void(0)" onclick="menuSkin(1)">🎨 Skin 1 (L noir)</a>
+    <a href="javascript:void(0)" onclick="menuSkin(2)">🎨 Skin 2 (triangle)</a>
+    <a href="javascript:void(0)" onclick="menuSkin(3)">🎨 Skin 3 (cœur)</a>
+  </div>
+</div>
+
+<!-- ===== TABLEAU DE MARQUE ===== -->
+<table id="tmarque">
+  <tr>
+    <th id="thR" ontouchend="touchChapeau('R',event)" onclick="clicChapeau('R')"><img id="chpR" alt=""></th>
+    <th id="thB" ontouchend="touchChapeau('B',event)" onclick="clicChapeau('B')"><img id="chpB" alt=""></th>
+    <th id="thO" ontouchend="touchChapeau('O',event)" onclick="clicChapeau('O')"><img id="chpO" alt=""></th>
+  </tr>
+  <tr>
+    <th id="nrou" class="nom-r">ROU</th>
+    <th id="nble" class="nom-b">BLE</th>
+    <th id="nora" class="nom-o">ORA</th>
+  </tr>
+  <tr>
+    <td><img id="SiniR" alt=""></td>
+    <td><img id="SiniB" alt=""></td>
+    <td><img id="SiniO" alt=""></td>
+  </tr>
+  <tr>
+    <td><img id="Sadd1R" alt=""></td>
+    <td><img id="Sadd1B" alt=""></td>
+    <td><img id="Sadd1O" alt=""></td>
+  </tr>
+  <tr>
+    <td><img id="Sadd2R" alt=""></td>
+    <td><img id="Sadd2B" alt=""></td>
+    <td><img id="Sadd2O" alt=""></td>
+  </tr>
+  <tr>
+    <td><img id="Sadd3R" alt=""></td>
+    <td><img id="Sadd3B" alt=""></td>
+    <td><img id="Sadd3O" alt=""></td>
+  </tr>
+</table>
+
+<!-- ===== AVERTISSEMENTS ===== -->
+<table id="tavert">
+  <tr>
+    <td><img id="AvR" alt=""></td>
+    <td><img id="AvB" alt=""></td>
+    <td><img id="AvO" alt=""></td>
+  </tr>
+</table>
+
+<!-- ===== SAISIE DONNE ===== -->
+<div id="sdonne">
+
+  <!-- Noms répétés -->
+  <div id="snoms-donne">
+    <div class="dn nom-r" id="dn-r">ROU</div>
+    <div class="dn nom-b" id="dn-b">BLE</div>
+    <div class="dn nom-o" id="dn-o">ORA</div>
+  </div>
+
+  <!-- Images mk avec zones div (pas d'image-map) -->
+  <table id="tmk">
+    <tr>
+      <td>
+        <div class="mk-wrap" id="mkR">
+          <img id="img1" src="img1/mk00.png" alt="">
+          <div class="mk-zone mk-zone-g" ontouchend="touchMk('R',1,event)" onclick="clicMk('R',1)"></div>
+          <div class="mk-zone mk-zone-d" ontouchend="touchMk('R',2,event)" onclick="clicMk('R',2)"></div>
+        </div>
+      </td>
+      <td>
+        <div class="mk-wrap" id="mkB">
+          <img id="img2" src="img1/mk00.png" alt="">
+          <div class="mk-zone mk-zone-g" ontouchend="touchMk('B',1,event)" onclick="clicMk('B',1)"></div>
+          <div class="mk-zone mk-zone-d" ontouchend="touchMk('B',2,event)" onclick="clicMk('B',2)"></div>
+        </div>
+      </td>
+      <td>
+        <div class="mk-wrap" id="mkO">
+          <img id="img3" src="img1/mk00.png" alt="">
+          <div class="mk-zone mk-zone-g" ontouchend="touchMk('O',1,event)" onclick="clicMk('O',1)"></div>
+          <div class="mk-zone mk-zone-d" ontouchend="touchMk('O',2,event)" onclick="clicMk('O',2)"></div>
+        </div>
+      </td>
+    </tr>
+  </table>
+
+  <!-- Saisie plis -->
+  <div id="splis">
+    <div class="col-plis">
+      <div class="plis-ctrl">
+        <button class="btn-pm" ontouchend="touchPm('R',-1,event)" onclick="changerPlis('R',-1)">−</button>
+        <input class="inp-plis" id="ScoreR" type="number" min="0" max="10" placeholder="—" oninput="verifierPlis()">
+        <button class="btn-pm" ontouchend="touchPm('R',+1,event)" onclick="changerPlis('R',+1)">+</button>
+      </div>
+    </div>
+    <div class="col-plis">
+      <div class="plis-ctrl">
+        <button class="btn-pm" ontouchend="touchPm('B',-1,event)" onclick="changerPlis('B',-1)">−</button>
+        <input class="inp-plis" id="ScoreB" type="number" min="0" max="10" placeholder="—" oninput="verifierPlis()">
+        <button class="btn-pm" ontouchend="touchPm('B',+1,event)" onclick="changerPlis('B',+1)">+</button>
+      </div>
+    </div>
+    <div class="col-plis">
+      <div class="plis-ctrl">
+        <button class="btn-pm" ontouchend="touchPm('O',-1,event)" onclick="changerPlis('O',-1)">−</button>
+        <input class="inp-plis" id="ScoreO" type="number" min="0" max="10" placeholder="—" oninput="verifierPlis()">
+        <button class="btn-pm" ontouchend="touchPm('O',+1,event)" onclick="changerPlis('O',+1)">+</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- fin sdonne -->
+
+<!-- ===== VALIDER ===== -->
+<div id="valider-row">
+  <span id="msg">Nouvelle partie !</span>
+  <img id="imval" src="img1/valid.png" alt="Valider"
+       ontouchend="touchValider(event)" onclick="comptabilise()">
+</div>
+
+
+<script>
+// =========================================================
+//  COM'ON! — Feuille de marque v4.0
+// =========================================================
+
+// --- État ---
+var stR=0, stB=0, stO=0;      // 0=neutre  1=+½  2=-1
+var idR=0, idB=0, idO=0;       // IDs joueurs en cours
+var oR=0,  oB=0,  oO=0;        // mémo pour annuler
+var chapeau = "R";
+var pRga=0, pRvi=6, pRpe=0, pRav="";
+var pBga=0, pBvi=6, pBpe=0, pBav="";
+var pOga=0, pOvi=6, pOpe=0, pOav="";
+var nR="DZO", nB="JJN", nO="PAT";
+var sk = "img1";               // skin courant
+var dialogAction = null;
+
+// =========================================================
+//  TOUCH — évite le double-déclenchement touch+click sur iOS
+// =========================================================
+function touchMk(c, v, e) {
+  e.preventDefault();
+  clicMk(c, v);
+}
+function touchPm(c, d, e) {
+  e.preventDefault();
+  changerPlis(c, d);
+}
+function touchValider(e) {
+  e.preventDefault();
+  comptabilise();
+}
+
+// =========================================================
+//  MENU
+// =========================================================
+function toggleMenu() {
+  document.getElementById("menudrop").classList.toggle("open");
+}
+document.addEventListener("touchend", function(e) {
+  if (!document.getElementById("menubar").contains(e.target))
+    document.getElementById("menudrop").classList.remove("open");
+}, {passive: true});
+document.addEventListener("click", function(e) {
+  if (!document.getElementById("menubar").contains(e.target))
+    document.getElementById("menudrop").classList.remove("open");
+});
+
+function fermerMenu() { document.getElementById("menudrop").classList.remove("open"); }
+function menuJoueurs()  { fermerMenu(); window.location.href="joueurs.html"; }
+function menuAnnuler()  { fermerMenu(); annuler(); }
+function menuNouvelle() { fermerMenu(); confirmer("Démarrer une nouvelle partie ?", function(){ effacerSauvegarde(); window.location.href="joueurs.html?mode=select"; }); }
+function menuSkin(s)    { fermerMenu(); changerSkin(s); }
+
+// =========================================================
+//  DIALOGUE (remplace confirm() natif)
+// =========================================================
+function confirmer(texte, action) {
+  document.getElementById("dialog-msg").textContent = texte;
+  document.getElementById("overlay").classList.add("open");
+  dialogAction = action;
+}
+function dialogOui() {
+  document.getElementById("overlay").classList.remove("open");
+  if (dialogAction) { dialogAction(); dialogAction = null; }
+}
+function dialogNon() {
+  document.getElementById("overlay").classList.remove("open");
+  dialogAction = null;
+}
+
+// =========================================================
+//  LOCALSTORAGE
+// =========================================================
+var LS_KEY = "comon_v4";
+
+function sauvegarder() {
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify({
+      chapeau:chapeau, sk:sk, nR:nR, nB:nB, nO:nO,
+      pRga:pRga, pRvi:pRvi, pRpe:pRpe,
+      pBga:pBga, pBvi:pBvi, pBpe:pBpe,
+      pOga:pOga, pOvi:pOvi, pOpe:pOpe,
+      stR:stR, stB:stB, stO:stO,
+      oR:oR, oB:oB, oO:oO,
+      idR:idR, idB:idB, idO:idO
+    }));
+  } catch(e) {}
+}
+
+function restaurer() {
+  try {
+    var raw = localStorage.getItem(LS_KEY);
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    chapeau=d.chapeau; sk=d.sk||"img1";
+    nR=d.nR; nB=d.nB; nO=d.nO;
+    pRga=d.pRga; pRvi=d.pRvi; pRpe=d.pRpe;
+    pBga=d.pBga; pBvi=d.pBvi; pBpe=d.pBpe;
+    pOga=d.pOga; pOvi=d.pOvi; pOpe=d.pOpe;
+    stR=d.stR; stB=d.stB; stO=d.stO;
+    oR=d.oR; oB=d.oB; oO=d.oO;
+    idR=Number(d.idR)||0; idB=Number(d.idB)||0; idO=Number(d.idO)||0;
+    return true;
+  } catch(e) { return false; }
+}
+
+function effacerSauvegarde() {
+  try { localStorage.removeItem(LS_KEY); } catch(e) {}
+}
+
+// =========================================================
+//  INITIALISATION
+// =========================================================
+window.addEventListener("DOMContentLoaded", function() {
+  restaurer(); // silencieux — si ça plante, les valeurs par défaut sont déjà en place
+  // Si on revient de joueurs.html avec demanderChapeau, lancer la sélection
+  if (demanderChapeauAuDemarrage()) return;
+  rafraichir();
+  msg("S", "Bienvenue dans COM'ON !");
+});
+
+var choixChapeau = false;
+var partieEnregistree = false;
+var fitilCouleur = null;  // true = en attente du choix du chapeau
+
+function demanderChapeauAuDemarrage() {
+  try {
+    var raw = localStorage.getItem("comon_v4");
+    if (!raw) return false;
+    var d = JSON.parse(raw);
+    if (!d.demanderChapeau) return false;
+    // Effacer le flag
+    d.demanderChapeau = false;
+    localStorage.setItem("comon_v4", JSON.stringify(d));
+    // Lancer la phase choix chapeau
+    choixChapeau = true;
+    rafraichir();
+    document.getElementById("thR").classList.add("chap-pulse");
+    document.getElementById("thB").classList.add("chap-pulse");
+    document.getElementById("thO").classList.add("chap-pulse");
+    document.getElementById("imval").classList.add("disabled");
+    msg("I", "Qui distribue en premier ? Cliquez sur un chapeau !");
+    return true;
+  } catch(e) { return false; }
+}
+
+function initialise() {
+  chapeau = "R";  // sera écrasé par le choix
+  pRga=0; pRvi=6; pRpe=0; pRav="";
+  pBga=0; pBvi=6; pBpe=0; pBav="";
+  pOga=0; pOvi=6; pOpe=0; pOav="";
+  stR=0; stB=0; stO=0;
+  oR=0; oB=0; oO=0;
+  viderPlis();
+  partieEnregistree = false;
+  effacerSauvegarde();
+  // Entrer en phase de choix du chapeau AVANT rafraichir()
+  choixChapeau = true;
+  rafraichir();
+  document.getElementById("thR").classList.add("chap-pulse");
+  document.getElementById("thB").classList.add("chap-pulse");
+  document.getElementById("thO").classList.add("chap-pulse");
+  document.getElementById("imval").classList.add("disabled");
+  msg("I", "Qui distribue en premier ? Cliquez sur un chapeau !");
+}
+
+function touchChapeau(c, e) {
+  e.preventDefault();
+  clicChapeau(c);
+}
+
+function clicChapeau(c) {
+  if (!choixChapeau) return;
+  choixChapeau = false;
+  chapeau = c;
+  // Retirer le pulse et le disabled
+  document.getElementById("thR").classList.remove("chap-pulse");
+  document.getElementById("thB").classList.remove("chap-pulse");
+  document.getElementById("thO").classList.remove("chap-pulse");
+  document.getElementById("imval").classList.remove("disabled");
+  rafraichir();
+  msg("S", "Nouvelle partie !");
+}
+
+// =========================================================
+//  AFFICHAGE GÉNÉRAL
+// =========================================================
+function rafraichir() {
+  // Noms
+  setText("nrou", nR); setText("nble", nB); setText("nora", nO);
+  setText("dn-r", nR); setText("dn-b", nB); setText("dn-o", nO);
+  // Chapeaux
+  if (choixChapeau) {
+    // Phase de choix : tous les chapeaux actifs
+    setImg("chpR", sk + "/Chapeau2.gif");
+    setImg("chpB", sk + "/Chapeau2.gif");
+    setImg("chpO", sk + "/Chapeau2.gif");
+  } else {
+    setImg("chpR", sk + (chapeau==="R" ? "/Chapeau2.gif" : "/Chapeau0.gif"));
+    setImg("chpB", sk + (chapeau==="B" ? "/Chapeau2.gif" : "/Chapeau0.gif"));
+    setImg("chpO", sk + (chapeau==="O" ? "/Chapeau2.gif" : "/Chapeau0.gif"));
+  }
+  // Bouton valider
+  setImg("imval", sk + "/valid.png");
+  // Marque + avertissements
+  calcScores();
+  // Images mk
+  majMk("R", stR); majMk("B", stB); majMk("O", stO);
+}
+
+function verifierFinPartie() {
+  if (partieEnregistree) return;
+  var fitilIds = [];
+  var joueurIds = [];
+  try {
+    joueurIds = [idR,idB,idO].filter(Boolean);
+    if (pRav==="x" && idR) fitilIds.push(idR);
+    if (pBav==="x" && idB) fitilIds.push(idB);
+    if (pOav==="x" && idO) fitilIds.push(idO);
+    if (fitilIds.length > 0 && joueurIds.length === 3) {
+      enregResultatAuto(joueurIds, fitilIds);
+      partieEnregistree = true;
+    }
+    // Quel joueur est fitil (couleur) ?
+    fitilCouleur = (pRav==="x") ? "R" : (pBav==="x") ? "B" : (pOav==="x") ? "O" : null;
+  } catch(e) {}
+}
+
+function enregResultatAuto(joueurIds, fitilIds) {
+  var joueurs = chargerJoueurs();
+  if (!joueurs.length) return;
+  var K = 32;
+  // Normaliser tous les IDs en nombres pour éviter les comparaisons string/number
+  joueurIds = joueurIds.map(Number);
+  fitilIds  = fitilIds.map(Number);
+  joueurs = joueurs.map(function(j) {
+    var jid = Number(j.id);
+    if (joueurIds.indexOf(jid) >= 0) {
+      j.parties = (j.parties||0) + 1;
+      if (fitilIds.indexOf(jid) >= 0) j.fitils = (j.fitils||0) + 1;
+    }
+    return j;
+  });
+  var fitils     = joueurIds.filter(function(id){ return fitilIds.indexOf(id)>=0; });
+  var survivants = joueurIds.filter(function(id){ return fitilIds.indexOf(id)<0; });
+  function getElo(id){ var j=joueurs.find(function(x){return Number(x.id)===id;}); return j?(j.elo||1000):1000; }
+  function setElo(id,v){ joueurs=joueurs.map(function(j){if(Number(j.id)===id)j.elo=Math.round(v);return j;}); }
+  function majElo(g,p){ var eG=getElo(g),eP=getElo(p),ex=1/(1+Math.pow(10,(eP-eG)/400)); setElo(g,eG+K*(1-ex)); setElo(p,eP+K*(0-(1-ex))); }
+  survivants.forEach(function(sg){ fitils.forEach(function(fi){ majElo(sg,fi); }); });
+  sauverJoueurs(joueurs);
+}
+
+function chargerJoueurs() {
+  try { var r=localStorage.getItem("comon_joueurs"); return r?JSON.parse(r):[]; } catch(e){ return []; }
+}
+function sauverJoueurs(joueurs) {
+  try { localStorage.setItem("comon_joueurs", JSON.stringify(joueurs)); } catch(e) {}
+}
+
+function setText(id, t) { document.getElementById(id).innerHTML = t; }
+function setImg(id, s)  { document.getElementById(id).src = s; }
+
+// =========================================================
+//  TABLEAU DE MARQUE + AVERTISSEMENTS
+// =========================================================
+function calcScores() {
+  var rR = pRvi + pRga/2 - pRpe;
+  var rB = pBvi + pBga/2 - pBpe;
+  var rO = pOvi + pOga/2 - pOpe;
+
+  function av(r) {
+    var x = Math.round(r * 2) / 2;
+    if (r > 2)   return "0";   // RAS
+    if (x >= 2)  return "m";   // Mouillé
+    if (x >= 1.5)return "n";   // Nage
+    if (x >= 1)  return "c";   // Coude
+    if (x >= 0.5)return "t";   // Tuba
+    return "x";                // Fitil
+  }
+  pRav = av(rR); pBav = av(rB); pOav = av(rO);
+
+  // Règle des 12 vies gagnées
+  var tot = (pRga>=12?1:0) + (pBga>=12?1:0) + (pOga>=12?1:0);
+  if (tot === 1) {
+    if (pRga>=12) { pBav="x"; pOav="x"; }
+    if (pBga>=12) { pRav="x"; pOav="x"; }
+    if (pOga>=12) { pRav="x"; pBav="x"; }
+  } else if (tot === 2) {
+    if (pRga<12) pRav="x";
+    if (pBga<12) pBav="x";
+    if (pOga<12) pOav="x";
+  }
+
+  setImg("AvR", sk + "/avert_" + pRav + ".gif");
+  setImg("AvB", sk + "/avert_" + pBav + ".gif");
+  setImg("AvO", sk + "/avert_" + pOav + ".gif");
+  // Enregistrement auto stats si fin de partie
+  verifierFinPartie();
+
+  affMarque("R", pRpe, pRga);
+  affMarque("B", pBpe, pBga);
+  affMarque("O", pOpe, pOga);
+}
+
+function affMarque(c, pe, ga) {
+  var s0 = (pe > 6) ? 6 : (pe !== 0 ? pe : "x");
+  setImg("Sini" + c, sk + "/ssini" + s0 + ".gif");
+
+  var rpe = Math.max(0, pe - 6), rga = ga;
+  var codes = {40:"a",41:"b",42:"c",30:"d",31:"e",32:"f",
+               20:"g",21:"h",10:"i",11:"j",0:"k"};
+  for (var n = 1; n <= 3; n++) {
+    var lg = Math.min(rga, 4); rga -= lg;
+    var lp = Math.min(rpe, 2); rpe -= lp;
+    setImg("Sadd" + n + c, sk + "/ssup_" + (codes[lg*10+lp] || "k") + ".gif");
+  }
+}
+
+// =========================================================
+//  IMAGES MK (sans image-map, zones div)
+// =========================================================
+function majMk(c, etat) {
+  var fic = (etat===1) ? "mk10.png" : (etat===2) ? "mk01.png" : "mk00.png";
+  var id  = (c==="R") ? "img1" : (c==="B") ? "img2" : "img3";
+  setImg(id, sk + "/" + fic);
+}
+
+function clicMk(c, v) {
+  var cur = (c==="R") ? stR : (c==="B") ? stB : stO;
+  var nouv = (cur === v) ? 0 : v;   // toggle
+  setEtat(c, nouv);
+  majMk(c, nouv);
+  viderPlis();
+  msgValide();
+}
+
+// =========================================================
+//  SAISIE DES PLIS
+// =========================================================
+function changerPlis(c, d) {
+  var el = document.getElementById("Score" + c);
+  var v  = parseInt(el.value);
+  if (isNaN(v)) v = 0;
+  el.value = Math.max(0, Math.min(10, v + d));
+  verifierPlis();
+}
+
+function verifierPlis() {
+  var vR = document.getElementById("ScoreR").value;
+  var vB = document.getElementById("ScoreB").value;
+  var vO = document.getElementById("ScoreO").value;
+  if (vR==="" || vB==="" || vO==="") return;
+
+  var sR=parseInt(vR), sB=parseInt(vB), sO=parseInt(vO);
+  var tot = sR + sB + sO;
+  if (tot !== 10) {
+    msg("E", tot + " plis — le total doit être 10 !");
+    return;
+  }
+
+  // Calcul G/P/R selon les règles
+  var sc = [{c:"R",p:sR},{c:"B",p:sB},{c:"O",p:sO}];
+  sc.sort(function(a,b){ return b.p - a.p; });
+  var res = {R:0, B:0, O:0};
+  var p0=sc[0].p, p1=sc[1].p, p2=sc[2].p;
+
+  if (p0===p1) {
+    // XX-Y : 2 gagnants, 1 perdant
+    res[sc[0].c]=1; res[sc[1].c]=1; res[sc[2].c]=2;
+  } else if (p1===p2) {
+    // X-YY : 1 gagnant, 2 perdants
+    res[sc[0].c]=1; res[sc[1].c]=2; res[sc[2].c]=2;
+  } else {
+    // X-Y-Z : 1 gagnant, 1 perdant, 1 neutre
+    res[sc[0].c]=1; res[sc[1].c]=2; res[sc[2].c]=0;
+  }
+
+  stR=res.R; stB=res.B; stO=res.O;
+  majMk("R",stR); majMk("B",stB); majMk("O",stO);
+  msg("S", "Total 10 ✓ — validez !");
+}
+
+function viderPlis() {
+  document.getElementById("ScoreR").value = "";
+  document.getElementById("ScoreB").value = "";
+  document.getElementById("ScoreO").value = "";
+}
+
+// =========================================================
+//  VALIDER UNE DONNE
+// =========================================================
+function comptabilise() {
+  if (pRav==="x" || pBav==="x" || pOav==="x") {
+    msg("I", "Partie terminée ! " +
+      '<button onclick="rejouerMemeJoueurs()" style="margin-left:8px;padding:4px 10px;' +
+      'background:#2e7d32;color:white;border:none;border-radius:4px;cursor:pointer;' +
+      'touch-action:manipulation">▶ Rejouer</button>' +
+      ' ou Menu > Nouvelle partie.');
+    return;
+  }
+  var hasG = (stR===1 || stB===1 || stO===1);
+  var hasP = (stR===2 || stB===2 || stO===2);
+  if (!hasG || !hasP) {
+    msg("E", "Il faut au moins 1 Gagné (+½) et 1 Perdu (-1) !");
+    return;
+  }
+  // Mémo pour annuler
+  oR=stR; oB=stB; oO=stO;
+  // Appliquer
+  if (stR===1) pRga++; if (stR===2) pRpe++;
+  if (stB===1) pBga++; if (stB===2) pBpe++;
+  if (stO===1) pOga++; if (stO===2) pOpe++;
+  // Rotation chapeau R→B→O→R
+  chapeau = (chapeau==="R") ? "B" : (chapeau==="B") ? "O" : "R";
+  // Reset
+  stR=0; stB=0; stO=0;
+  viderPlis();
+  sauvegarder();
+  rafraichir();
+  msg("S", "Score enregistré !");
+}
+
+// =========================================================
+//  REJOUER MÊMES JOUEURS
+// =========================================================
+function rejouerMemeJoueurs() {
+  // Garder nR/nB/nO et les IDs, juste remettre les scores à zéro
+  pRga=0; pRvi=6; pRpe=0; pRav="";
+  pBga=0; pBvi=6; pBpe=0; pBav="";
+  pOga=0; pOvi=6; pOpe=0; pOav="";
+  stR=0; stB=0; stO=0;
+  oR=0; oB=0; oO=0;
+  partieEnregistree = false;
+  viderPlis();
+  // Le chapeau va au Fitil
+  if (fitilCouleur) chapeau = fitilCouleur;
+  fitilCouleur = null;
+  sauvegarder();
+  rafraichir();
+  msg("S", "Nouvelle partie — même équipe !");
+}
+
+// =========================================================
+//  ANNULER
+// =========================================================
+function annuler() {
+  if (!oR && !oB && !oO) { msg("E", "Plus rien à annuler !"); return; }
+  // Rotation inverse
+  chapeau = (chapeau==="R") ? "O" : (chapeau==="B") ? "R" : "B";
+  if (oR===1) pRga--; if (oR===2) pRpe--;
+  if (oB===1) pBga--; if (oB===2) pBpe--;
+  if (oO===1) pOga--; if (oO===2) pOpe--;
+  oR=0; oB=0; oO=0; stR=0; stB=0; stO=0;
+  viderPlis();
+  sauvegarder();
+  rafraichir();
+  msg("I", "Dernière marque annulée !");
+}
+
+// =========================================================
+//  SKIN
+// =========================================================
+function changerSkin(s) {
+  sk = "img" + s;
+  sauvegarder();
+  rafraichir();
+  msg("S", "Skin " + s + " activé !");
+}
+
+// =========================================================
+//  NOMS
+// =========================================================
+
+// =========================================================
+//  UTILITAIRES
+// =========================================================
+function setEtat(c, v) {
+  if (c==="R") stR=v;
+  else if (c==="B") stB=v;
+  else stO=v;
+}
+
+function msg(t, texte) {
+  var el = document.getElementById("msg");
+  el.innerHTML = texte;
+  el.style.color = (t==="S") ? "lime" : (t==="I") ? "yellow" : "#ff6666";
+}
+
+function msgValide() {
+  var hasG = (stR===1||stB===1||stO===1);
+  var hasP = (stR===2||stB===2||stO===2);
+  if (hasG && hasP) msg("S", "Prêt à valider !");
+  else msg("I", "Sélectionnez le résultat de chaque joueur...");
+}
+
+</script>
+</body>
+</html>

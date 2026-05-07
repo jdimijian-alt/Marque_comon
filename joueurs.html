@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>COM'ON ! — Joueurs</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <style>
+    * {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
+    }
+    body {
+      background: #787878; font-family: Arial, sans-serif;
+      max-width: 600px; margin: 0 auto;
+    }
+
+    /* ===== HEADER ===== */
+    #header {
+      background: #333; display: flex;
+      align-items: center; padding: 10px 14px; gap: 10px;
+    }
+    #header h1 { color: white; font-size: 1.1em; flex: 1; }
+    .btn-header {
+      background: #555; color: white; border: none;
+      padding: 8px 14px; border-radius: 6px; font-size: 0.9em;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .btn-header:active { background: #888; }
+    .btn-header.vert { background: #2e7d32; }
+    .btn-header.vert:active { background: #1b5e20; }
+
+    /* ===== ONGLETS ===== */
+    #onglets {
+      display: flex; background: #222;
+      border-bottom: 2px solid yellow;
+    }
+    .onglet {
+      flex: 1; padding: 12px 4px; text-align: center;
+      color: #aaa; font-size: 0.9em; cursor: pointer;
+      touch-action: manipulation; border: none; background: none;
+    }
+    .onglet.actif { color: yellow; border-bottom: 3px solid yellow; }
+
+    /* ===== VUES ===== */
+    .vue { display: none; padding: 10px; }
+    .vue.active { display: block; }
+
+    /* ===== LISTE JOUEURS ===== */
+    .joueur-card {
+      background: #222; border-radius: 8px; margin-bottom: 8px;
+      padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+      border: 1px solid #444;
+    }
+    .joueur-code {
+      background: #444; color: yellow; font-weight: bold;
+      font-size: 1em; padding: 6px 8px; border-radius: 5px;
+      min-width: 52px; text-align: center; letter-spacing: 1px;
+    }
+    .joueur-info { flex: 1; }
+    .joueur-nom { color: white; font-size: 0.95em; }
+    .joueur-stats { color: #aaa; font-size: 0.8em; margin-top: 2px; }
+    .joueur-elo {
+      color: #4fc3f7; font-weight: bold;
+      font-size: 1em; text-align: right; min-width: 44px;
+    }
+    .btn-edit {
+      background: #555; color: white; border: none;
+      padding: 6px 10px; border-radius: 5px; font-size: 0.85em;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .btn-edit:active { background: #888; }
+    .btn-del {
+      background: #7b1010; color: white; border: none;
+      padding: 6px 10px; border-radius: 5px; font-size: 0.85em;
+      cursor: pointer; touch-action: manipulation;
+    }
+    .btn-del:active { background: #c00; }
+
+    /* ===== FORMULAIRE JOUEUR ===== */
+    .form-section {
+      background: #222; border-radius: 8px; padding: 14px;
+      margin-bottom: 10px;
+    }
+    .form-section h3 { color: yellow; margin-bottom: 12px; font-size: 1em; }
+    .form-row { margin-bottom: 10px; }
+    .form-row label { color: #aaa; font-size: 0.85em; display: block; margin-bottom: 4px; }
+    .form-row input {
+      width: 100%; padding: 8px; border-radius: 5px;
+      border: 1px solid #555; background: #111; color: white;
+      font-size: 1em;
+      user-select: text; -webkit-user-select: text;
+    }
+    .form-row input:focus { border-color: yellow; outline: none; }
+    .form-row small { color: #666; font-size: 0.78em; }
+    .btn-form {
+      width: 100%; padding: 11px; border-radius: 6px; border: none;
+      font-size: 1em; cursor: pointer; margin-top: 4px;
+      touch-action: manipulation;
+    }
+    .btn-save { background: #2e7d32; color: white; }
+    .btn-save:active { background: #1b5e20; }
+    .btn-cancel { background: #555; color: white; margin-top: 6px; }
+    .btn-cancel:active { background: #888; }
+
+    /* ===== SÉLECTION 3 JOUEURS ===== */
+    #vue-select h3 { color: yellow; margin-bottom: 10px; font-size: 1em; }
+    .slots {
+      display: flex; gap: 6px; margin-bottom: 14px;
+    }
+    .slot {
+      flex: 1; background: #222; border: 2px dashed #555;
+      border-radius: 8px; padding: 8px 4px; text-align: center;
+      min-height: 60px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .slot.filled { border-color: yellow; border-style: solid; }
+    .slot-label { color: #aaa; font-size: 0.75em; margin-bottom: 4px; }
+    .slot-r .slot-label { color: #f88; }
+    .slot-b .slot-label { color: #88f; }
+    .slot-o .slot-label { color: #fa0; }
+    .slot-code { color: yellow; font-weight: bold; font-size: 1em; }
+    .slot-nom { color: #ccc; font-size: 0.75em; }
+
+    .joueur-select-card {
+      background: #222; border-radius: 8px; margin-bottom: 6px;
+      padding: 10px 12px; display: flex; align-items: center; gap: 10px;
+      border: 2px solid #333; cursor: pointer; touch-action: manipulation;
+    }
+    .joueur-select-card:active { background: #333; }
+    .joueur-select-card.selectionne { border-color: yellow; }
+    .slot-btn {
+      background: #444; color: white; border: none;
+      padding: 5px 8px; border-radius: 4px; font-size: 0.8em;
+      cursor: pointer; touch-action: manipulation; margin-left: 2px;
+    }
+    .slot-btn.actif-r { background: #900; }
+    .slot-btn.actif-b { background: #009; }
+    .slot-btn.actif-o { background: #960; }
+
+    .btn-jouer {
+      width: 100%; padding: 14px; border-radius: 8px; border: none;
+      font-size: 1.1em; font-weight: bold; cursor: pointer;
+      touch-action: manipulation; margin-top: 8px;
+      background: #2e7d32; color: white;
+    }
+    .btn-jouer:disabled { background: #333; color: #666; cursor: default; }
+    .btn-jouer:active:not(:disabled) { background: #1b5e20; }
+
+    /* ===== SAISIE A POSTERIORI ===== */
+    #vue-apost h3 { color: yellow; margin-bottom: 10px; font-size: 1em; }
+    .apost-section { background: #222; border-radius: 8px; padding: 12px; margin-bottom: 10px; }
+    .apost-section h4 { color: #aaa; font-size: 0.85em; margin-bottom: 8px; }
+
+    .apost-joueur {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 6px; padding: 6px; border-radius: 5px;
+      background: #1a1a1a;
+    }
+    .apost-code { color: yellow; font-weight: bold; min-width: 52px; }
+    .apost-nom { color: white; font-size: 0.9em; flex: 1; }
+    .btn-fitil {
+      padding: 5px 10px; border-radius: 4px; border: none;
+      font-size: 0.85em; cursor: pointer; touch-action: manipulation;
+      background: #444; color: #ccc;
+    }
+    .btn-fitil.actif { background: #7b1010; color: white; }
+    .btn-fitil:active { background: #c00; color: white; }
+
+    .btn-enreg {
+      width: 100%; padding: 12px; border-radius: 6px; border: none;
+      font-size: 1em; font-weight: bold; cursor: pointer;
+      touch-action: manipulation; background: #c00; color: white;
+    }
+    .btn-enreg:active { background: #900; }
+
+    /* ===== STATS GLOBALES ===== */
+    #vue-stats h3 { color: yellow; margin-bottom: 10px; font-size: 1em; }
+    .stat-card {
+      background: #222; border-radius: 8px; margin-bottom: 8px;
+      padding: 12px; border: 1px solid #444;
+    }
+    .stat-header {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+    }
+    .stat-elo { color: #4fc3f7; font-weight: bold; font-size: 1.2em; }
+    .stat-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px; text-align: center;
+    }
+    .stat-cell { background: #1a1a1a; border-radius: 5px; padding: 6px; }
+    .stat-val { color: white; font-size: 1.1em; font-weight: bold; }
+    .stat-lbl { color: #666; font-size: 0.72em; margin-top: 2px; }
+
+    /* ===== MESSAGE ===== */
+    #msg-joueurs {
+      background: #111; color: lime; padding: 8px 12px;
+      font-size: 0.85em; min-height: 32px; text-align: center;
+    }
+
+    /* ===== DIALOGUE ===== */
+    #overlay-j {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.65); z-index: 500;
+      align-items: center; justify-content: center;
+    }
+    #overlay-j.open { display: flex; }
+    #dialog-j {
+      background: white; border-radius: 12px;
+      padding: 24px 20px 16px; max-width: 290px;
+      width: 90%; text-align: center;
+    }
+    #dialog-j p { margin-bottom: 18px; font-size: 1.05em; line-height: 1.5; }
+    .djbtn {
+      display: inline-block; padding: 10px 24px;
+      border-radius: 7px; border: none; font-size: 1em;
+      cursor: pointer; margin: 4px; touch-action: manipulation;
+    }
+    #djbtn-ok  { background: #c00; color: white; }
+    #djbtn-non { background: #888; color: white; }
+
+  </style>
+</head>
+<body>
+
+<!-- DIALOGUE -->
+<div id="overlay-j">
+  <div id="dialog-j">
+    <p id="dialog-j-msg">Confirmer ?</p>
+    <button class="djbtn" id="djbtn-ok"  onclick="dialogJOui()">Oui</button>
+    <button class="djbtn" id="djbtn-non" onclick="dialogJNon()">Annuler</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div id="header">
+  <h1>COM'ON ! — Joueurs</h1>
+  <button class="btn-header" onclick="retourJeu()">◀ Jeu</button>
+</div>
+
+<!-- MESSAGE -->
+<div id="msg-joueurs">—</div>
+
+<!-- ONGLETS -->
+<div id="onglets">
+  <button class="onglet actif" id="ong-liste"  onclick="affVue('liste')">📋 Joueurs</button>
+  <button class="onglet"       id="ong-select" onclick="affVue('select')">🎮 Nouvelle partie</button>
+  <button class="onglet"       id="ong-apost"  onclick="affVue('apost')">✏️ À posteriori</button>
+  <button class="onglet"       id="ong-stats"  onclick="affVue('stats')">📊 Stats</button>
+</div>
+
+<!-- VUE : LISTE JOUEURS -->
+<div class="vue active" id="vue-liste">
+  <div id="liste-joueurs"></div>
+  <button class="btn-form btn-save" style="margin-top:6px" onclick="affFormulaireNouveau()">+ Ajouter un joueur</button>
+
+  <!-- Formulaire ajout/édition -->
+  <div id="form-joueur" style="display:none; margin-top:12px;">
+    <div class="form-section">
+      <h3 id="form-titre">Nouveau joueur</h3>
+      <input type="hidden" id="f-id">
+      <div class="form-row">
+        <label>Code (3 à 8 caractères)</label>
+        <input type="text" id="f-code" maxlength="8" placeholder="ex: PAT"
+               style="text-transform:uppercase">
+        <small>Identifiant court affiché pendant le jeu</small>
+      </div>
+      <div class="form-row">
+        <label>Prénom</label>
+        <input type="text" id="f-prenom" placeholder="ex: Patrick">
+      </div>
+      <div class="form-row">
+        <label>Nom</label>
+        <input type="text" id="f-nom" placeholder="ex: Hellmann">
+      </div>
+      <button class="btn-form btn-save" onclick="sauverJoueur()">✔ Enregistrer</button>
+      <button class="btn-form btn-cancel" onclick="annulerFormulaire()">✖ Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- VUE : SÉLECTION 3 JOUEURS -->
+<div class="vue" id="vue-select">
+  <h3>Sélectionnez 3 joueurs</h3>
+
+  <!-- Slots R / B / O -->
+  <div class="slots">
+    <div class="slot slot-r" id="slot-R">
+      <div class="slot-label">ROUGE</div>
+      <div class="slot-code" id="slot-code-R">—</div>
+      <div class="slot-nom"  id="slot-nom-R"></div>
+    </div>
+    <div class="slot slot-b" id="slot-B">
+      <div class="slot-label">BLEU</div>
+      <div class="slot-code" id="slot-code-B">—</div>
+      <div class="slot-nom"  id="slot-nom-B"></div>
+    </div>
+    <div class="slot slot-o" id="slot-O">
+      <div class="slot-label">ORANGE</div>
+      <div class="slot-code" id="slot-code-O">—</div>
+      <div class="slot-nom"  id="slot-nom-O"></div>
+    </div>
+  </div>
+
+  <!-- Liste joueurs avec boutons R/B/O -->
+  <div id="liste-select"></div>
+
+  <button class="btn-jouer" id="btn-jouer" disabled onclick="lancerPartie()">
+    ▶ Lancer la partie
+  </button>
+</div>
+
+<!-- VUE : SAISIE À POSTERIORI -->
+<div class="vue" id="vue-apost">
+  <h3>Saisir une partie à posteriori</h3>
+
+  <div class="apost-section">
+    <h4>1. Sélectionnez les 3 joueurs</h4>
+    <div id="apost-select-liste"></div>
+  </div>
+
+  <div class="apost-section" id="apost-fitil-section" style="display:none">
+    <h4>2. Qui était Fitil ? (1 ou 2 joueurs)</h4>
+    <div id="apost-fitil-liste"></div>
+  </div>
+
+  <button class="btn-enreg" id="btn-enreg" onclick="enregApost()" style="display:none">
+    ✔ Enregistrer la partie
+  </button>
+</div>
+
+<!-- VUE : STATS -->
+<div class="vue" id="vue-stats">
+  <h3>Classement & Stats</h3>
+  <div id="stats-liste"></div>
+</div>
+
+<script>
+// =========================================================
+//  COM'ON! — Gestion Joueurs v1.0
+// =========================================================
+
+var LS_JOUEURS  = "comon_joueurs";
+var LS_PARTIE   = "comon_v4";
+var dialogJAction = null;
+
+// Sélection en cours (vue select)
+var selR = null, selB = null, selO = null;
+
+// Sélection à posteriori
+var apostJoueurs = [];   // 3 joueurs sélectionnés
+var apostFitils  = [];   // fitils cochés
+
+// =========================================================
+//  DONNÉES
+// =========================================================
+function chargerJoueurs() {
+  try {
+    var r = localStorage.getItem(LS_JOUEURS);
+    return r ? JSON.parse(r) : [];
+  } catch(e) { return []; }
+}
+
+function sauverJoueurs(joueurs) {
+  try { localStorage.setItem(LS_JOUEURS, JSON.stringify(joueurs)); } catch(e) {}
+}
+
+function joueurParId(id) {
+  return chargerJoueurs().find(function(j){ return j.id === id; });
+}
+
+function prochainId(joueurs) {
+  if (!joueurs.length) return 1;
+  return Math.max.apply(null, joueurs.map(function(j){ return j.id; })) + 1;
+}
+
+// =========================================================
+//  NAVIGATION
+// =========================================================
+function affVue(nom) {
+  ["liste","select","apost","stats"].forEach(function(v) {
+    document.getElementById("vue-"+v).classList.remove("active");
+    document.getElementById("ong-"+v).classList.remove("actif");
+  });
+  document.getElementById("vue-"+nom).classList.add("active");
+  document.getElementById("ong-"+nom).classList.add("actif");
+  if (nom==="liste")   renderListe();
+  if (nom==="select")  renderSelect();
+  if (nom==="apost")   renderApost();
+  if (nom==="stats")   renderStats();
+}
+
+function retourJeu() {
+  window.location.href = "index.html";
+}
+
+// =========================================================
+//  DIALOGUE
+// =========================================================
+function confirmerJ(texte, action) {
+  document.getElementById("dialog-j-msg").textContent = texte;
+  document.getElementById("overlay-j").classList.add("open");
+  dialogJAction = action;
+}
+function dialogJOui() {
+  document.getElementById("overlay-j").classList.remove("open");
+  if (dialogJAction) { dialogJAction(); dialogJAction = null; }
+}
+function dialogJNon() {
+  document.getElementById("overlay-j").classList.remove("open");
+  dialogJAction = null;
+}
+
+// =========================================================
+//  MESSAGES
+// =========================================================
+function msgJ(texte, type) {
+  var el = document.getElementById("msg-joueurs");
+  el.textContent = texte;
+  el.style.color = (type==="E") ? "#ff6666" : (type==="I") ? "yellow" : "lime";
+}
+
+// =========================================================
+//  VUE LISTE
+// =========================================================
+function renderListe() {
+  var joueurs = chargerJoueurs();
+  var el = document.getElementById("liste-joueurs");
+  if (!joueurs.length) {
+    el.innerHTML = '<p style="color:#aaa;padding:16px;text-align:center">Aucun joueur enregistré.</p>';
+    return;
+  }
+  joueurs.sort(function(a,b){ return (b.elo||1000)-(a.elo||1000); });
+  el.innerHTML = joueurs.map(function(j) {
+    var parties = j.parties || 0;
+    var fitils  = j.fitils  || 0;
+    var pct = parties ? Math.round(fitils/parties*100) : 0;
+    return '<div class="joueur-card">' +
+      '<div class="joueur-code">' + j.code + '</div>' +
+      '<div class="joueur-info">' +
+        '<div class="joueur-nom">' + j.prenom + ' ' + j.nom + '</div>' +
+        '<div class="joueur-stats">' + parties + ' parties · ' + fitils + ' Fitil(s) (' + pct + '%)</div>' +
+      '</div>' +
+      '<div class="joueur-elo">' + (j.elo||1000) + '</div>' +
+      '<button class="btn-edit" onclick="affFormulaireEdit(' + j.id + ')">✏️</button>' +
+      '<button class="btn-del"  onclick="supprimerJoueur(' + j.id + ')">🗑</button>' +
+    '</div>';
+  }).join("");
+}
+
+// =========================================================
+//  FORMULAIRE AJOUT / ÉDITION
+// =========================================================
+function affFormulaireNouveau() {
+  document.getElementById("f-id").value     = "";
+  document.getElementById("f-code").value   = "";
+  document.getElementById("f-prenom").value = "";
+  document.getElementById("f-nom").value    = "";
+  document.getElementById("form-titre").textContent = "Nouveau joueur";
+  document.getElementById("form-joueur").style.display = "block";
+  document.getElementById("f-code").focus();
+}
+
+function affFormulaireEdit(id) {
+  var j = joueurParId(id);
+  if (!j) return;
+  document.getElementById("f-id").value     = j.id;
+  document.getElementById("f-code").value   = j.code;
+  document.getElementById("f-prenom").value = j.prenom;
+  document.getElementById("f-nom").value    = j.nom;
+  document.getElementById("form-titre").textContent = "Modifier " + j.code;
+  document.getElementById("form-joueur").style.display = "block";
+}
+
+function annulerFormulaire() {
+  document.getElementById("form-joueur").style.display = "none";
+}
+
+function sauverJoueur() {
+  var code   = document.getElementById("f-code").value.trim().toUpperCase();
+  var prenom = document.getElementById("f-prenom").value.trim();
+  var nom    = document.getElementById("f-nom").value.trim();
+  var id     = document.getElementById("f-id").value;
+
+  if (code.length < 3 || code.length > 8) {
+    msgJ("Le code doit faire entre 3 et 8 caractères.", "E"); return;
+  }
+  if (!prenom) { msgJ("Prénom requis.", "E"); return; }
+
+  var joueurs = chargerJoueurs();
+
+  // Vérifier unicité du code
+  var doublon = joueurs.find(function(j){
+    return j.code === code && String(j.id) !== String(id);
+  });
+  if (doublon) { msgJ("Ce code est déjà utilisé par " + doublon.prenom + ".", "E"); return; }
+
+  if (id) {
+    // Modification
+    joueurs = joueurs.map(function(j) {
+      if (String(j.id) === String(id)) {
+        j.code = code; j.prenom = prenom; j.nom = nom;
+      }
+      return j;
+    });
+    msgJ("Joueur modifié !", "S");
+  } else {
+    // Nouveau
+    joueurs.push({
+      id: prochainId(joueurs),
+      code: code, prenom: prenom, nom: nom,
+      elo: 1000, parties: 0, fitils: 0
+    });
+    msgJ("Joueur ajouté !", "S");
+  }
+
+  sauverJoueurs(joueurs);
+  document.getElementById("form-joueur").style.display = "none";
+  renderListe();
+}
+
+function supprimerJoueur(id) {
+  var j = joueurParId(id);
+  confirmerJ("Supprimer " + j.code + " (" + j.prenom + ") ?", function() {
+    var joueurs = chargerJoueurs().filter(function(x){ return x.id !== id; });
+    sauverJoueurs(joueurs);
+    msgJ("Joueur supprimé.", "I");
+    renderListe();
+  });
+}
+
+// =========================================================
+//  VUE SÉLECTION 3 JOUEURS
+// =========================================================
+function renderSelect() {
+  majSlots();
+  var joueurs = chargerJoueurs();
+  var el = document.getElementById("liste-select");
+  if (!joueurs.length) {
+    el.innerHTML = '<p style="color:#aaa;padding:16px;text-align:center">Aucun joueur — ajoutez-en d\'abord.</p>';
+    return;
+  }
+  joueurs.sort(function(a,b){ return (b.elo||1000)-(a.elo||1000); });
+  el.innerHTML = joueurs.map(function(j) {
+    var estR = selR && selR.id===j.id;
+    var estB = selB && selB.id===j.id;
+    var estO = selO && selO.id===j.id;
+    var sel  = estR||estB||estO;
+    return '<div class="joueur-select-card' + (sel?' selectionne':'') + '">' +
+      '<div class="joueur-code">' + j.code + '</div>' +
+      '<div class="joueur-info">' +
+        '<div class="joueur-nom">' + j.prenom + ' ' + j.nom + '</div>' +
+        '<div class="joueur-stats">Élo ' + (j.elo||1000) + '</div>' +
+      '</div>' +
+      '<button class="slot-btn' + (estR?' actif-r':'') + '" onclick="assignSlot(' + j.id + ',\'R\')">R</button>' +
+      '<button class="slot-btn' + (estB?' actif-b':'') + '" onclick="assignSlot(' + j.id + ',\'B\')">B</button>' +
+      '<button class="slot-btn' + (estO?' actif-o':'') + '" onclick="assignSlot(' + j.id + ',\'O\')">O</button>' +
+    '</div>';
+  }).join("");
+}
+
+function assignSlot(id, couleur) {
+  var j = joueurParId(id);
+  // Retirer ce joueur des autres slots
+  if (selR && selR.id===id) selR=null;
+  if (selB && selB.id===id) selB=null;
+  if (selO && selO.id===id) selO=null;
+  // Assigner (toggle : si déjà dans ce slot, on vide)
+  if (couleur==="R") { selR = (selR && selR.id===id) ? null : j; }
+  if (couleur==="B") { selB = (selB && selB.id===id) ? null : j; }
+  if (couleur==="O") { selO = (selO && selO.id===id) ? null : j; }
+  // Ré-assigner proprement
+  if (couleur==="R") selR = j;
+  else if (couleur==="B") selB = j;
+  else selO = j;
+  majSlots();
+  renderSelect();
+}
+
+function majSlots() {
+  function majSlot(c, j) {
+    var el = document.getElementById("slot-"+c);
+    document.getElementById("slot-code-"+c).textContent = j ? j.code : "—";
+    document.getElementById("slot-nom-"+c).textContent  = j ? j.prenom : "";
+    el.classList.toggle("filled", !!j);
+  }
+  majSlot("R", selR); majSlot("B", selB); majSlot("O", selO);
+  document.getElementById("btn-jouer").disabled = !(selR && selB && selO);
+}
+
+function lancerPartie() {
+  if (!selR || !selB || !selO) return;
+  // Sauvegarder les joueurs sélectionnés dans le localStorage de la partie
+  try {
+    var partie = JSON.parse(localStorage.getItem(LS_PARTIE) || "{}");
+    partie.nR = selR.code; partie.idR = selR.id;
+    partie.nB = selB.code; partie.idB = selB.id;
+    partie.nO = selO.code; partie.idO = selO.id;
+    // Reset scores
+    partie.pRga=0; partie.pRvi=6; partie.pRpe=0;
+    partie.pBga=0; partie.pBvi=6; partie.pBpe=0;
+    partie.pOga=0; partie.pOvi=6; partie.pOpe=0;
+    partie.stR=0; partie.stB=0; partie.stO=0;
+    partie.oR=0; partie.oB=0; partie.oO=0;
+    partie.chapeau="R"; // sera choisi via les chapeaux
+    partie.demanderChapeau = true;
+    localStorage.setItem(LS_PARTIE, JSON.stringify(partie));
+  } catch(e) {}
+  window.location.href = "index.html";
+}
+
+// =========================================================
+//  VUE SAISIE À POSTERIORI
+// =========================================================
+function renderApost() {
+  apostJoueurs = []; apostFitils = [];
+  document.getElementById("apost-fitil-section").style.display = "none";
+  document.getElementById("btn-enreg").style.display = "none";
+  var joueurs = chargerJoueurs();
+  joueurs.sort(function(a,b){ return (b.elo||1000)-(a.elo||1000); });
+  var el = document.getElementById("apost-select-liste");
+  el.innerHTML = joueurs.map(function(j) {
+    return '<div class="joueur-select-card" id="apost-j-'+j.id+'" onclick="toggleApostJoueur('+j.id+')">' +
+      '<div class="joueur-code">' + j.code + '</div>' +
+      '<div class="joueur-info"><div class="joueur-nom">' + j.prenom + ' ' + j.nom + '</div></div>' +
+    '</div>';
+  }).join("");
+}
+
+function toggleApostJoueur(id) {
+  var idx = apostJoueurs.indexOf(id);
+  if (idx >= 0) {
+    apostJoueurs.splice(idx, 1);
+  } else {
+    if (apostJoueurs.length >= 3) { msgJ("3 joueurs maximum.", "E"); return; }
+    apostJoueurs.push(id);
+  }
+  // Maj visuel
+  var joueurs = chargerJoueurs();
+  joueurs.forEach(function(j) {
+    var el = document.getElementById("apost-j-"+j.id);
+    if (el) el.classList.toggle("selectionne", apostJoueurs.indexOf(j.id)>=0);
+  });
+
+  if (apostJoueurs.length === 3) {
+    renderApostFitils();
+    document.getElementById("apost-fitil-section").style.display = "block";
+  } else {
+    document.getElementById("apost-fitil-section").style.display = "none";
+    document.getElementById("btn-enreg").style.display = "none";
+    apostFitils = [];
+  }
+  msgJ(apostJoueurs.length + " joueur(s) sélectionné(s)", "I");
+}
+
+function renderApostFitils() {
+  apostFitils = [];
+  var joueurs = chargerJoueurs();
+  var el = document.getElementById("apost-fitil-liste");
+  el.innerHTML = apostJoueurs.map(function(id) {
+    var j = joueurs.find(function(x){ return x.id===id; });
+    if (!j) return "";
+    return '<div class="apost-joueur">' +
+      '<div class="apost-code">' + j.code + '</div>' +
+      '<div class="apost-nom">' + j.prenom + ' ' + j.nom + '</div>' +
+      '<button class="btn-fitil" id="fitil-'+j.id+'" onclick="toggleFitil('+j.id+')">FITIL</button>' +
+    '</div>';
+  }).join("");
+}
+
+function toggleFitil(id) {
+  var idx = apostFitils.indexOf(id);
+  if (idx >= 0) apostFitils.splice(idx, 1);
+  else {
+    if (apostFitils.length >= 2) { msgJ("Maximum 2 Fitils.", "E"); return; }
+    apostFitils.push(id);
+  }
+  apostJoueurs.forEach(function(jid) {
+    var el = document.getElementById("fitil-"+jid);
+    if (el) el.classList.toggle("actif", apostFitils.indexOf(jid)>=0);
+  });
+  document.getElementById("btn-enreg").style.display =
+    apostFitils.length >= 1 ? "block" : "none";
+}
+
+function enregApost() {
+  if (apostJoueurs.length !== 3 || apostFitils.length < 1) return;
+  enregResultat(apostJoueurs, apostFitils);
+  msgJ("Partie enregistrée !", "S");
+  renderApost();
+  renderStats();
+}
+
+// =========================================================
+//  ENREGISTREMENT RÉSULTAT + ÉLO
+// =========================================================
+function enregResultat(joueurIds, fitilIds) {
+  var joueurs = chargerJoueurs();
+  var K = 32;
+
+  // Mettre à jour parties et fitils
+  joueurs = joueurs.map(function(j) {
+    if (joueurIds.indexOf(j.id) >= 0) {
+      j.parties = (j.parties||0) + 1;
+      if (fitilIds.indexOf(j.id) >= 0) j.fitils = (j.fitils||0) + 1;
+    }
+    return j;
+  });
+
+  // Élo : chaque Fitil a "perdu" contre chaque non-Fitil
+  var fitils    = joueurIds.filter(function(id){ return fitilIds.indexOf(id)>=0; });
+  var survivants = joueurIds.filter(function(id){ return fitilIds.indexOf(id)<0; });
+
+  function getElo(id) {
+    var j = joueurs.find(function(x){ return x.id===id; });
+    return j ? (j.elo||1000) : 1000;
+  }
+  function setElo(id, nouvel) {
+    joueurs = joueurs.map(function(j) {
+      if (j.id===id) j.elo = Math.round(nouvel);
+      return j;
+    });
+  }
+  function majElo(idGagnant, idPerdant) {
+    var eG = getElo(idGagnant), eP = getElo(idPerdant);
+    var expG = 1 / (1 + Math.pow(10, (eP-eG)/400));
+    var expP = 1 - expG;
+    setElo(idGagnant, eG + K * (1 - expG));
+    setElo(idPerdant,  eP + K * (0 - expP));
+  }
+
+  // Chaque survivant bat chaque fitil
+  survivants.forEach(function(sg) {
+    fitils.forEach(function(fi) {
+      majElo(sg, fi);
+    });
+  });
+
+  sauverJoueurs(joueurs);
+}
+
+// =========================================================
+//  VUE STATS
+// =========================================================
+function renderStats() {
+  var joueurs = chargerJoueurs();
+  if (!joueurs.length) {
+    document.getElementById("stats-liste").innerHTML =
+      '<p style="color:#aaa;padding:16px;text-align:center">Aucun joueur.</p>';
+    return;
+  }
+  joueurs.sort(function(a,b){ return (b.elo||1000)-(a.elo||1000); });
+  document.getElementById("stats-liste").innerHTML = joueurs.map(function(j, i) {
+    var parties = j.parties||0;
+    var fitils  = j.fitils||0;
+    var survie  = parties - fitils;
+    var pctF    = parties ? Math.round(fitils/parties*100) : 0;
+    var medaille = i===0?"🥇":i===1?"🥈":i===2?"🥉":"";
+    return '<div class="stat-card">' +
+      '<div class="stat-header">' +
+        '<div class="joueur-code">' + j.code + '</div>' +
+        '<div class="joueur-info"><div class="joueur-nom">' + medaille + ' ' + j.prenom + ' ' + j.nom + '</div></div>' +
+        '<div class="stat-elo">⚡' + (j.elo||1000) + '</div>' +
+      '</div>' +
+      '<div class="stat-grid">' +
+        '<div class="stat-cell"><div class="stat-val">' + parties + '</div><div class="stat-lbl">Parties</div></div>' +
+        '<div class="stat-cell"><div class="stat-val">' + fitils + '</div><div class="stat-lbl">Fitils</div></div>' +
+        '<div class="stat-cell"><div class="stat-val">' + pctF + '%</div><div class="stat-lbl">% Fitil</div></div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+// =========================================================
+//  INIT
+// =========================================================
+window.addEventListener("DOMContentLoaded", function() {
+  // Si on arrive depuis "Nouvelle Partie", ouvrir directement la sélection
+  var params = new URLSearchParams(window.location.search);
+  if (params.get("mode") === "select") {
+    affVue("select");
+  } else {
+    renderListe();
+  }
+  msgJ("Bienvenue !", "S");
+});
+
+</script>
+</body>
+</html>
