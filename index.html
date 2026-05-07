@@ -552,9 +552,10 @@ function enregResultatAuto(joueurIds, fitilIds) {
   var joueurs = chargerJoueurs();
   if (!joueurs.length) return;
   var K = 32;
-  // Normaliser tous les IDs en nombres pour éviter les comparaisons string/number
+  // Normaliser tous les IDs en nombres
   joueurIds = joueurIds.map(Number);
   fitilIds  = fitilIds.map(Number);
+  // Mettre à jour parties et fitils
   joueurs = joueurs.map(function(j) {
     var jid = Number(j.id);
     if (joueurIds.indexOf(jid) >= 0) {
@@ -565,10 +566,28 @@ function enregResultatAuto(joueurIds, fitilIds) {
   });
   var fitils     = joueurIds.filter(function(id){ return fitilIds.indexOf(id)>=0; });
   var survivants = joueurIds.filter(function(id){ return fitilIds.indexOf(id)<0; });
-  function getElo(id){ var j=joueurs.find(function(x){return Number(x.id)===id;}); return j?(j.elo||1000):1000; }
-  function setElo(id,v){ joueurs=joueurs.map(function(j){if(Number(j.id)===id)j.elo=Math.round(v);return j;}); }
-  function majElo(g,p){ var eG=getElo(g),eP=getElo(p),ex=1/(1+Math.pow(10,(eP-eG)/400)); setElo(g,eG+K*(1-ex)); setElo(p,eP+K*(0-(1-ex))); }
-  survivants.forEach(function(sg){ fitils.forEach(function(fi){ majElo(sg,fi); }); });
+  // Capturer les Élos INITIAUX avant tout calcul
+  var elosInitiaux = {};
+  joueurs.forEach(function(j){ elosInitiaux[Number(j.id)] = j.elo||1000; });
+  // Calculer tous les deltas d'abord
+  var deltas = {};
+  joueurIds.forEach(function(id){ deltas[id] = 0; });
+  survivants.forEach(function(sg) {
+    fitils.forEach(function(fi) {
+      var eG = elosInitiaux[sg], eP = elosInitiaux[fi];
+      var ex = 1 / (1 + Math.pow(10, (eP - eG) / 400));
+      deltas[sg] += K * (1 - ex);
+      deltas[fi] += K * (0 - (1 - ex));
+    });
+  });
+  // Appliquer tous les deltas en une fois
+  joueurs = joueurs.map(function(j) {
+    var jid = Number(j.id);
+    if (deltas.hasOwnProperty(jid)) {
+      j.elo = Math.round((j.elo||1000) + deltas[jid]);
+    }
+    return j;
+  });
   sauverJoueurs(joueurs);
 }
 
@@ -753,6 +772,7 @@ function rejouerMemeJoueurs() {
   stR=0; stB=0; stO=0;
   oR=0; oB=0; oO=0;
   partieEnregistree = false;
+  pRav=""; pBav=""; pOav="";  // évite re-détection immédiate du fitil
   viderPlis();
   // Le chapeau va au Fitil
   if (fitilCouleur) chapeau = fitilCouleur;

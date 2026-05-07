@@ -219,6 +219,28 @@
     #djbtn-ok  { background: #c00; color: white; }
     #djbtn-non { background: #888; color: white; }
 
+    /* ===== STATS ÉDITABLES ===== */
+    .stats-edit-row {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .stats-edit-cell {
+      flex: 1; background: #1a1a1a; border-radius: 6px;
+      padding: 8px 6px; text-align: center;
+    }
+    .stats-edit-cell label { color: #aaa; font-size: 0.75em; display: block; margin-bottom: 4px; }
+    .stats-edit-cell input {
+      width: 100%; text-align: center; font-size: 1.1em; font-weight: bold;
+      background: #111; color: white; border: 2px solid #555;
+      border-radius: 4px; padding: 4px;
+      user-select: text; -webkit-user-select: text;
+    }
+    .stats-edit-cell input:disabled {
+      background: transparent; border-color: transparent;
+      color: #4fc3f7; cursor: default;
+    }
+    .btn-stats-edit { background: #1565c0; color: white; }
+    .btn-stats-edit:active { background: #0d47a1; }
+
   </style>
 </head>
 <body>
@@ -273,6 +295,30 @@
         <label>Nom</label>
         <input type="text" id="f-nom" placeholder="ex: Hellmann">
       </div>
+      <!-- Stats éditables -->
+      <div id="stats-edit-bloc" style="display:none; margin-top:12px;">
+        <div style="color:#aaa; font-size:0.85em; margin-bottom:8px;">Statistiques</div>
+        <div class="stats-edit-row">
+          <div class="stats-edit-cell">
+            <label>Parties</label>
+            <input type="number" id="f-parties" min="0" disabled>
+          </div>
+          <div class="stats-edit-cell">
+            <label>Fitils</label>
+            <input type="number" id="f-fitils" min="0" disabled>
+          </div>
+          <div class="stats-edit-cell">
+            <label>Élo</label>
+            <input type="number" id="f-elo" min="0" disabled>
+          </div>
+        </div>
+        <button class="btn-form btn-stats-edit" id="btn-modifier-stats" onclick="activerStatsEdit()">✏️ Modifier les stats</button>
+        <div id="stats-edit-actions" style="display:none;">
+          <button class="btn-form btn-save" onclick="sauverStats()">✔ Enregistrer les stats</button>
+          <button class="btn-form btn-cancel" onclick="annulerStatsEdit()">✖ Annuler</button>
+        </div>
+      </div>
+
       <button class="btn-form btn-save" onclick="sauverJoueur()">✔ Enregistrer</button>
       <button class="btn-form btn-cancel" onclick="annulerFormulaire()">✖ Annuler</button>
     </div>
@@ -457,9 +503,12 @@ function affFormulaireNouveau() {
   document.getElementById("f-prenom").value = "";
   document.getElementById("f-nom").value    = "";
   document.getElementById("form-titre").textContent = "Nouveau joueur";
+  document.getElementById("stats-edit-bloc").style.display = "none";
   document.getElementById("form-joueur").style.display = "block";
   document.getElementById("f-code").focus();
 }
+
+var statsOriginales = {};  // mémo pour annuler
 
 function affFormulaireEdit(id) {
   var j = joueurParId(id);
@@ -469,7 +518,62 @@ function affFormulaireEdit(id) {
   document.getElementById("f-prenom").value = j.prenom;
   document.getElementById("f-nom").value    = j.nom;
   document.getElementById("form-titre").textContent = "Modifier " + j.code;
+  // Remplir les stats (en lecture seule)
+  document.getElementById("f-parties").value = j.parties || 0;
+  document.getElementById("f-fitils").value  = j.fitils  || 0;
+  document.getElementById("f-elo").value     = j.elo     || 1000;
+  document.getElementById("f-parties").disabled = true;
+  document.getElementById("f-fitils").disabled  = true;
+  document.getElementById("f-elo").disabled     = true;
+  document.getElementById("stats-edit-bloc").style.display = "block";
+  document.getElementById("btn-modifier-stats").style.display = "block";
+  document.getElementById("stats-edit-actions").style.display = "none";
+  // Mémoriser les valeurs originales
+  statsOriginales = { parties: j.parties||0, fitils: j.fitils||0, elo: j.elo||1000 };
   document.getElementById("form-joueur").style.display = "block";
+}
+
+function activerStatsEdit() {
+  document.getElementById("f-parties").disabled = false;
+  document.getElementById("f-fitils").disabled  = false;
+  document.getElementById("f-elo").disabled     = false;
+  document.getElementById("btn-modifier-stats").style.display = "none";
+  document.getElementById("stats-edit-actions").style.display = "block";
+  document.getElementById("f-parties").focus();
+}
+
+function annulerStatsEdit() {
+  document.getElementById("f-parties").value = statsOriginales.parties;
+  document.getElementById("f-fitils").value  = statsOriginales.fitils;
+  document.getElementById("f-elo").value     = statsOriginales.elo;
+  document.getElementById("f-parties").disabled = true;
+  document.getElementById("f-fitils").disabled  = true;
+  document.getElementById("f-elo").disabled     = true;
+  document.getElementById("btn-modifier-stats").style.display = "block";
+  document.getElementById("stats-edit-actions").style.display = "none";
+}
+
+function sauverStats() {
+  var id      = document.getElementById("f-id").value;
+  var parties = parseInt(document.getElementById("f-parties").value) || 0;
+  var fitils  = parseInt(document.getElementById("f-fitils").value)  || 0;
+  var elo     = parseInt(document.getElementById("f-elo").value)     || 1000;
+  if (fitils > parties) { msgJ("Les Fitils ne peuvent pas dépasser les Parties.", "E"); return; }
+  var joueurs = chargerJoueurs().map(function(j) {
+    if (String(j.id) === String(id)) {
+      j.parties = parties; j.fitils = fitils; j.elo = elo;
+    }
+    return j;
+  });
+  sauverJoueurs(joueurs);
+  statsOriginales = { parties: parties, fitils: fitils, elo: elo };
+  document.getElementById("f-parties").disabled = true;
+  document.getElementById("f-fitils").disabled  = true;
+  document.getElementById("f-elo").disabled     = true;
+  document.getElementById("btn-modifier-stats").style.display = "block";
+  document.getElementById("stats-edit-actions").style.display = "none";
+  msgJ("Stats mises à jour !", "S");
+  renderListe();
 }
 
 function annulerFormulaire() {
