@@ -1,0 +1,24 @@
+{
+  "name": "COM'ON! - Jeu de cartes",
+  "short_name": "COM'ON!",
+  "description": "Feuille de marque et gestion des joueurs pour le jeu de cartes COM'ON!",
+  "start_url": "index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#787878",
+  "theme_color": "#333333",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
