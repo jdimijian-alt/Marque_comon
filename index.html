@@ -180,6 +180,24 @@
       animation: pulse-chap 1s infinite;
       cursor: pointer;
     }
+    #overlay-chap {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.75); z-index: 600;
+      align-items: center; justify-content: center;
+    }
+    #overlay-chap.open { display: flex; }
+    #dialog-chap {
+      background: white; border-radius: 12px;
+      padding: 22px 18px 16px; max-width: 300px;
+      width: 90%; text-align: center;
+    }
+    #dialog-chap p { margin: 0 0 16px; font-size: 1.15em; font-weight: bold; }
+    .chap-btn {
+      display: block; width: 100%; margin: 8px 0;
+      padding: 14px 8px; border-radius: 8px;
+      border: 2px solid currentColor; cursor: pointer;
+      touch-action: manipulation;
+    }
     #imval.disabled {
       opacity: 0.3;
       cursor: default;
@@ -196,6 +214,16 @@
     <p id="dialog-msg">Confirmer ?</p>
     <button class="dbtn" id="dbtn-ok"  onclick="dialogOui()">Oui</button>
     <button class="dbtn" id="dbtn-non" onclick="dialogNon()">Annuler</button>
+  </div>
+</div>
+
+<!-- ===== CHOIX DU PREMIER DISTRIBUTEUR ===== -->
+<div id="overlay-chap">
+  <div id="dialog-chap">
+    <p>🎩 Qui distribue en premier ?</p>
+    <button class="chap-btn nom-r" id="chb-R" ontouchend="touchChapeau('R',event)" onclick="clicChapeau('R')">ROU</button>
+    <button class="chap-btn nom-b" id="chb-B" ontouchend="touchChapeau('B',event)" onclick="clicChapeau('B')">BLE</button>
+    <button class="chap-btn nom-o" id="chb-O" ontouchend="touchChapeau('O',event)" onclick="clicChapeau('O')">ORA</button>
   </div>
 </div>
 
@@ -216,9 +244,9 @@
 <!-- ===== TABLEAU DE MARQUE ===== -->
 <table id="tmarque">
   <tr>
-    <th id="thR" ontouchend="touchChapeau('R',event)" onclick="clicChapeau('R')"><img id="chpR" alt=""></th>
-    <th id="thB" ontouchend="touchChapeau('B',event)" onclick="clicChapeau('B')"><img id="chpB" alt=""></th>
-    <th id="thO" ontouchend="touchChapeau('O',event)" onclick="clicChapeau('O')"><img id="chpO" alt=""></th>
+    <th id="thR"><img id="chpR" alt=""></th>
+    <th id="thB"><img id="chpB" alt=""></th>
+    <th id="thO"><img id="chpO" alt=""></th>
   </tr>
   <tr>
     <th id="nrou" class="nom-r">ROU</th>
@@ -451,14 +479,7 @@ function demanderChapeauAuDemarrage() {
     // Effacer le flag
     d.demanderChapeau = false;
     localStorage.setItem("comon_v4", JSON.stringify(d));
-    // Lancer la phase choix chapeau
-    choixChapeau = true;
-    rafraichir();
-    document.getElementById("thR").classList.add("chap-pulse");
-    document.getElementById("thB").classList.add("chap-pulse");
-    document.getElementById("thO").classList.add("chap-pulse");
-    document.getElementById("imval").classList.add("disabled");
-    msg("I", "Qui distribue en premier ? Cliquez sur un chapeau !");
+    ouvrirChoixChapeau();
     return true;
   } catch(e) { return false; }
 }
@@ -473,14 +494,16 @@ function initialise() {
   viderPlis();
   partieEnregistree = false;
   effacerSauvegarde();
-  // Entrer en phase de choix du chapeau AVANT rafraichir()
+  ouvrirChoixChapeau();
+}
+
+function ouvrirChoixChapeau() {
   choixChapeau = true;
   rafraichir();
-  document.getElementById("thR").classList.add("chap-pulse");
-  document.getElementById("thB").classList.add("chap-pulse");
-  document.getElementById("thO").classList.add("chap-pulse");
+  setText("chb-R", nR); setText("chb-B", nB); setText("chb-O", nO);
   document.getElementById("imval").classList.add("disabled");
-  msg("I", "Qui distribue en premier ? Cliquez sur un chapeau !");
+  document.getElementById("overlay-chap").classList.add("open");
+  msg("I", "Choisissez le premier distributeur.");
 }
 
 function touchChapeau(c, e) {
@@ -492,13 +515,11 @@ function clicChapeau(c) {
   if (!choixChapeau) return;
   choixChapeau = false;
   chapeau = c;
-  // Retirer le pulse et le disabled
-  document.getElementById("thR").classList.remove("chap-pulse");
-  document.getElementById("thB").classList.remove("chap-pulse");
-  document.getElementById("thO").classList.remove("chap-pulse");
+  document.getElementById("overlay-chap").classList.remove("open");
   document.getElementById("imval").classList.remove("disabled");
+  sauvegarder();
   rafraichir();
-  msg("S", "Nouvelle partie !");
+  msg("S", "Nouvelle partie — " + (c==="R" ? nR : c==="B" ? nB : nO) + " distribue !");
 }
 
 // =========================================================
@@ -690,15 +711,43 @@ function changerPlis(c, d) {
   verifierPlis();
 }
 
-function verifierPlis() {
-  var vR = document.getElementById("ScoreR").value;
-  var vB = document.getElementById("ScoreB").value;
-  var vO = document.getElementById("ScoreO").value;
-  if (vR==="" || vB==="" || vO==="") return;
+function lirePlis(c) {
+  var el = document.getElementById("Score" + c);
+  if (el.value === "") return null;
+  var v = parseInt(el.value);
+  if (isNaN(v)) { el.value = ""; return null; }
+  var b = Math.max(0, Math.min(10, v));
+  if (b !== v) el.value = b;
+  return b;
+}
 
-  var sR=parseInt(vR), sB=parseInt(vB), sO=parseInt(vO);
+function plisSaisis() {
+  return ["R","B","O"].some(function(c){ return document.getElementById("Score"+c).value !== ""; });
+}
+
+function effacerResultats() {
+  stR=0; stB=0; stO=0;
+  majMk("R",0); majMk("B",0); majMk("O",0);
+}
+
+function verifierPlis() {
+  var sR = lirePlis("R"), sB = lirePlis("B"), sO = lirePlis("O");
+
+  // Aucun pli saisi : retour au mode saisie directe
+  if (sR===null && sB===null && sO===null) {
+    effacerResultats();
+    msgValide();
+    return;
+  }
+  // Des plis sont saisis : ils sont la seule source du résultat
+  if (sR===null || sB===null || sO===null) {
+    effacerResultats();
+    msg("I", "Saisissez les plis des 3 joueurs...");
+    return;
+  }
   var tot = sR + sB + sO;
   if (tot !== 10) {
+    effacerResultats();
     msg("E", tot + " plis — le total doit être 10 !");
     return;
   }
@@ -735,6 +784,7 @@ function viderPlis() {
 //  VALIDER UNE DONNE
 // =========================================================
 function comptabilise() {
+  if (choixChapeau) { ouvrirChoixChapeau(); return; }
   if (pRav==="x" || pBav==="x" || pOav==="x") {
     msg("I", "Partie terminée ! " +
       '<button onclick="rejouerMemeJoueurs()" style="margin-left:8px;padding:4px 10px;' +
@@ -742,6 +792,13 @@ function comptabilise() {
       'touch-action:manipulation">▶ Rejouer</button>' +
       ' ou Menu > Nouvelle partie.');
     return;
+  }
+  if (plisSaisis()) {
+    var sR = lirePlis("R"), sB = lirePlis("B"), sO = lirePlis("O");
+    if (sR===null || sB===null || sO===null || sR+sB+sO !== 10) {
+      verifierPlis();
+      return;
+    }
   }
   var hasG = (stR===1 || stB===1 || stO===1);
   var hasP = (stR===2 || stB===2 || stO===2);
